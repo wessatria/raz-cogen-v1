@@ -1,0 +1,95 @@
+# Budget-Level Cogeneration Proposal
+
+**Prepared for:** [Client]  
+**Site:** [Site]  
+**Prepared by:** Raz Engineering Sdn. Bhd.  
+**Date / revision:** [Date / revision]  
+**Validity:** [30/60] days
+
+## Executive indication
+
+Based on the information currently available, Raz Engineering has identified a preliminary **[capacity] MW net [technology] cogeneration configuration** sized primarily against the site's **minimum coincident useful-heat demand** and electrical base load. The screening case indicates [annual generation] MWh/year, [useful heat] GJ/year, [fuel] MMBtu/year, indicative installed CAPEX of RM [x], annual gross saving of RM [x], and simple payback of [x] years.
+
+This result is suitable to support a decision on whether to proceed to a paid feasibility study. It is not a construction design, OEM guarantee, regulatory approval or binding offer.
+
+## Customer baseline
+
+| Item | Current basis | Data quality/source |
+|---|---:|---|
+| Annual electricity | [ ] MWh | [ ] |
+| Peak / base demand | [ ] / [ ] MW | [ ] |
+| Annual boiler fuel | [ ] MMBtu | [ ] |
+| Average / minimum / peak steam | [ ] / [ ] / [ ] t/h | [ ] |
+| Steam conditions | [ ] bar(g), [ ] °C | [ ] |
+| Operating hours | [ ] h/year | [ ] |
+| Existing annual energy cost | RM [ ] | [ ] |
+
+## Recommended configuration
+
+- Prime mover: [type/model basis]
+- Number of units and redundancy: [ ]
+- Net electrical capacity: [ ] MW
+- Heat recovery: [HRSG/hot-water/absorption cooling]
+- Useful-heat output: [ ] MWth
+- Supplemental boiler requirement: [ ]
+- Operating strategy: [base load / load following]
+- Export assumption: **None unless expressly stated and approved**
+
+## Preliminary heat and mass balance
+
+[Insert dynamic diagram and stream table]
+
+State the HHV/LHV basis, site conditions, fuel quality, gross/net boundary, steam-property method, auxiliaries and losses.
+
+## Budget economics
+
+| Metric | Base case | Downside | Upside |
+|---|---:|---:|---:|
+| Installed CAPEX | RM [ ] | RM [ ] | RM [ ] |
+| Annual fuel | RM [ ] | RM [ ] | RM [ ] |
+| Fixed + variable O&M | RM [ ] | RM [ ] | RM [ ] |
+| Residual grid/standby | RM [ ] | RM [ ] | RM [ ] |
+| Annual saving | RM [ ] | RM [ ] | RM [ ] |
+| LCOE, power-only | RM [ ]/kWh | [ ] | [ ] |
+| Net electricity cost after heat credit | RM [ ]/kWh | [ ] | [ ] |
+| Simple payback | [ ] years | [ ] | [ ] |
+| NPV / project IRR | RM [ ] / [ ]% | [ ] | [ ] |
+
+Incentives shall be shown as zero unless written project-specific eligibility has been confirmed. Carbon price shall be identified as a scenario where applicable.
+
+## EECA and project-approval screen
+
+- Combined 12-month energy: [ ] GJ
+- EECA threshold screen: [Applicable / below threshold / more data required]
+- REM / EnMS / reporting / audit status: [ ]
+- Generating-licence pathway: [review status]
+- Utility interconnection, protection and metering: [review status]
+- Export/NEDA: [not assumed / route under review]
+- Gas supply, environmental, planning, fire and local approvals: [review status]
+
+EECA applicability is not a cogeneration project approval. Final requirements must be confirmed with the Energy Commission, utility/Single Buyer and other competent authorities.
+
+## Preliminary scope
+
+Prime mover and generator; heat-recovery equipment; electrical and mechanical balance of plant; controls; gas and steam interfaces; cooling/water treatment as required; installation; testing and commissioning; preliminary engineering; and agreed training/spares.
+
+## Exclusions and customer responsibilities
+
+Land, major grid reinforcement, customer process modifications, unlisted civil works, financing, taxes/duties, statutory fees, fuel supply upgrades, outages, hazardous-material remediation and all items outside stated battery limits unless expressly included.
+
+## Key risks and qualifications
+
+- Customer load and thermal data require verification.
+- Performance requires OEM site-condition correction and guarantee.
+- Tariff, fuel and carbon assumptions may change.
+- Export revenue and incentive are not assumed without approval.
+- Space, gas pressure/quality, connection capacity, outage window, noise and emissions require site confirmation.
+- Estimate accuracy: screening/budget class; state the applicable range for the case.
+
+## Recommended next engagement
+
+Raz Engineering recommends a paid feasibility study covering interval-data validation, site walkdown, metering plan, verified heat and mass balance, OEM budget quotation, utility and regulatory pre-consultation, layout and tie-in review, risk register, implementation programme and investment-grade financial model.
+
+## Disclaimer
+
+This assessment is a budget-level screening based on information supplied by the customer and stated assumptions. It is not an OEM guarantee, statutory energy audit, regulatory approval, tax opinion, construction design or binding offer. Final performance, cost, savings, emissions, approvals and programme are subject to verified operating data, site assessment, utility and authority engagement, OEM quotation and detailed engineering.

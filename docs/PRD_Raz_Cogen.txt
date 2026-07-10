@@ -1,0 +1,351 @@
+# Product Requirements Document: Raz CogenScreen MY
+
+**Version:** 1.0  
+**Date:** 11 July 2026  
+**Owner:** Raz Engineering Sdn. Bhd.  
+**Status:** Build-ready specification for MVP  
+**Primary market:** Industrial and commercial energy users in Peninsular Malaysia and the Federal Territory of Labuan
+
+## 1. Product decision
+
+Build an internal, engineer-controlled web application that converts a qualified website or campaign enquiry into a traceable, budget-level cogeneration assessment. The application shall size a natural-gas cogeneration system against coincident useful-heat demand and electrical base load; calculate heat and mass balance, fuel consumption, LCOE, savings, emissions and basic investment metrics; screen the EECA and project-approval pathways; and generate a controlled customer proposal.
+
+The product is a **screening and proposal tool**, not an automated plant design, statutory energy audit, regulatory filing, OEM performance guarantee or investment approval.
+
+## 2. Problem and opportunity
+
+Factories commonly supply electricity and process heat separately. Cogeneration may reduce primary energy use when electricity and useful heat are produced simultaneously and both outputs are consistently consumed. Initial enquiries are difficult to qualify quickly because customer data are incomplete, electricity and thermal units differ, tariffs contain several components, and regulatory compliance is often confused with project approval.
+
+Malaysia's Energy Efficiency and Conservation Act 2024 took effect on 1 January 2025. It applies in Peninsular Malaysia and Labuan. An energy consumer reaching **21,600 GJ of combined energy consumption over 12 consecutive months** is subject to the prescribed obligations, including the registered-energy-manager, energy-management-system, reporting and energy-audit pathway. This creates a strong commercial reason to quantify both electrical and thermal energy, but it does not automatically approve or incentivise a cogeneration project.
+
+## 3. Goals
+
+1. Produce a defensible initial assessment within one working day after receipt of minimum data.
+2. Apply a consistent heat-led sizing SOP across Raz engineers.
+3. Prevent proposals based on peak-only loads, unverified export revenue, obsolete tariffs or unconfirmed incentives.
+4. Generate a preliminary heat and mass balance and a customer-facing budget proposal from the same versioned calculation record.
+5. Create a clear conversion path from free/initial screen to paid feasibility study, site assessment, OEM quotation and detailed design.
+6. Maintain an audit trail showing inputs, sources, assumptions, overrides, calculation version and reviewer approval.
+
+## 4. Non-goals
+
+- Detailed thermodynamic simulation, pinch analysis, transient operation, short-circuit or protection study.
+- Final steam-property calculation or OEM performance correction.
+- Statutory energy audit under EECA.
+- Automatic application for licence, NEDA participation, incentive or tax relief.
+- Guaranteed tariff, fuel price, carbon-tax liability, emissions reduction, savings or payback.
+- Construction drawings, equipment selection for purchase, or EPC price.
+
+## 5. Users and permissions
+
+| Role | Permissions |
+|---|---|
+| Lead intake / business development | Create lead, request data, view non-technical summary |
+| Cogen engineer | Enter data, select assumptions, run cases, prepare proposal |
+| Senior technical reviewer | Approve overrides, sizing basis, heat balance and issue status |
+| Commercial reviewer | Approve CAPEX, OPEX, tariff, fuel and proposal qualifications |
+| Administrator | Manage users, equipment library, source versions and templates |
+| Read-only management | View pipeline, KPIs and issued proposals |
+
+No customer shall access the engineering workspace in MVP. A later customer portal may collect data and display an approved summary only.
+
+## 6. Regulatory design principles
+
+1. Display **EECA screening** separately from **cogeneration project approvals**.
+2. Calculate the EECA threshold using 12 consecutive months of combined electricity and fuel/thermal-resource consumption, converted to GJ.
+3. If threshold is met, show the applicable compliance workflow; do not claim the proposed cogeneration project itself satisfies the Act.
+4. Treat the Energy Commission's 2019 cogeneration booklet as useful foundation material, but require current-rule confirmation for licensing, interconnection, standby/top-up charging and export/NEDA.
+5. Default export to **off**. Export energy and revenue require a reviewer-approved regulatory and interconnection route.
+6. Default incentive value to **zero**. EECA does not itself confer a financial incentive. GITA/GITE, capital allowances, duty relief or other benefits may only enter an issued case after written, project-specific confirmation by the competent agency and tax adviser. Natural-gas cogeneration must not be labelled green-technology eligible merely because it is efficient.
+7. Carbon price is a scenario input. The proposal shall not describe a general Malaysian carbon tax as legally applicable to the customer unless the relevant law, sector, effective date and scope have been confirmed.
+
+## 7. End-to-end SOP embedded in the product
+
+### Stage 0 — Lead qualification
+
+Capture site, industry, location, contact, decision-maker, enquiry source, pain point, target date, existing electrical and thermal systems, operating schedule and willingness to share data.
+
+Reject or park leads with no useful heat demand, fewer than 4,000 stable annual operating hours without a special case, no fuel/utility evidence, or no practical plant-space/gas-supply route. These are configurable commercial rules, not universal engineering limits.
+
+### Stage 1 — Data request
+
+Request:
+
+- 12 consecutive months of electricity bills and interval demand data where available;
+- 12 months of natural-gas or other boiler-fuel invoices and meter records;
+- steam/hot-water/chilled-water flow, pressure, temperature and hourly/daily profile;
+- boiler nameplate, fuel type, age, capacity, efficiency evidence, blowdown and condensate return;
+- operating calendar, production profile and planned changes;
+- single-line diagram, transformer and connection voltage;
+- gas pressure, quality, calorific value, supply capacity and contract terms;
+- site plan, plant-room photographs, space and tie-in constraints;
+- outage philosophy, islanding/black-start need and critical loads;
+- current EECA notice, REM/REA/EnMS/audit status if applicable.
+
+Each item receives `provided`, `estimated`, `derived`, `not available` or `not applicable`, with source date and attachment.
+
+### Stage 2 — Baseline reconstruction
+
+Reconcile annual electricity, maximum demand, interval-load percentiles, boiler fuel, useful heat and production schedule. The application shall flag inconsistent units, impossible load factors, steam demand above boiler capacity, useful heat above fuel input, or annual totals that do not reconcile within tolerance.
+
+### Stage 3 — Thermal-load calculation
+
+Calculate useful thermal duty from measured energy where available. For steam screening:
+
+`Useful heat MWth = steam flow (t/h) × enthalpy rise (kJ/kg) / 3,600`
+
+Use a steam-property service or verified table in production. The spreadsheet's simplified sensible-plus-latent estimate is permitted only for MVP screening and must be labelled accordingly. Account for condensate return, blowdown and make-up water. Separate average, minimum/base and peak useful loads.
+
+### Stage 4 — Initial sizing
+
+Default to heat-led sizing:
+
+1. Determine minimum coincident useful-heat demand during operating hours.
+2. Convert it to prime-mover fuel input using useful-heat-recovery efficiency.
+3. Calculate gross and net electrical output using site-corrected electrical efficiency and auxiliaries.
+4. Cap self-generation at the electrical base load unless export is approved for the case.
+5. Evaluate modular configurations, N+0/N+1 philosophy, part-load operation and supplemental boiler requirement.
+6. Compare reciprocating engine, gas turbine and, where relevant, steam-turbine/bottoming-cycle options.
+
+The selected case must preserve rejected alternatives and the selection rationale.
+
+### Stage 5 — Heat and mass balance
+
+Generate a numbered stream table and diagram containing, as applicable: fuel, combustion air, exhaust, feedwater, steam, condensate, make-up, blowdown, useful heat, generator gross power, auxiliaries, net power and grid import/export. Every stream carries value, unit, basis, source and confidence.
+
+Balance checks:
+
+- total electrical efficiency + useful-heat efficiency ≤ 100% on the same HHV/LHV basis;
+- fuel input approximately equals electrical output + useful heat + losses;
+- water input equals steam/condensate/blowdown balance within tolerance;
+- annual outputs do not exceed capacity × available hours;
+- exported energy is zero unless enabled and approved.
+
+### Stage 6 — Commercial model
+
+Calculate business-as-usual and cogeneration cases using explicit tariff components:
+
+- grid energy charge;
+- maximum-demand charge and only defensible demand reduction;
+- standby/top-up charges if applicable;
+- boiler fuel and water-treatment costs;
+- cogeneration fuel, fixed O&M, variable O&M and overhaul reserve;
+- supplemental boiler fuel;
+- export revenue only when approved;
+- carbon cost only as a labelled scenario;
+- installed CAPEX, contingency and owner costs;
+- confirmed incentive as a separate line, never embedded in CAPEX.
+
+Outputs: annual cost, gross and net saving, simple payback, capital-recovery LCOE, power-only LCOE, heat-credit net electricity cost, NPV, project IRR, emissions and primary-energy saving. MVP spreadsheet includes the core annual metrics; NPV/IRR time series is a web-app requirement.
+
+### Stage 7 — Compliance and constructability screen
+
+Complete EECA applicability; generating-licence pathway; installation and competent-person requirements; utility connection, synchronising, protection, metering and standby/top-up; export/NEDA; gas supply; environmental, planning, fire and local approvals; noise and emissions; outage/tie-in; and incentive confirmation.
+
+### Stage 8 — Review and proposal issue
+
+Technical and commercial reviewers must independently approve. The system shall prevent issue when mandatory data are missing, model checks fail, a material estimate lacks a qualification, export revenue is unsupported, or incentive value lacks evidence.
+
+### Stage 9 — Conversion to detailed engagement
+
+Proposal call-to-action: paid feasibility study including site walkdown, metering plan, interval-data analysis, verified steam properties, OEM performance and budget quotations, utility/regulatory pre-consultation, plot plan, electrical study scope, risk register and investment-grade model.
+
+## 8. Functional requirements
+
+### FR-1 Case management
+
+- Unique case ID, client, site, owner, stage, probability, due date and revision.
+- Clone case and compare scenarios without overwriting issued revisions.
+- Immutable snapshot for every issued proposal.
+
+### FR-2 Data intake and evidence
+
+- Guided form and CSV/XLSX import for monthly and interval data.
+- Unit-aware inputs and automatic conversions.
+- Attachment, source, period, confidence and reviewer note for each material input.
+- Completeness score and targeted follow-up email checklist.
+
+### FR-3 Load-profile analytics
+
+- Monthly electricity and fuel reconciliation.
+- Interval load-duration curve, operating/base/peak load and coincidence analysis.
+- Separate weekday/weekend, shift, seasonal and shutdown profiles.
+- Thermal/electrical coincidence factor.
+
+### FR-4 Equipment library
+
+- Versioned generic and OEM-specific records: technology, model, gross output, heat rate, exhaust flow/temperature, recoverable heat, part-load curves, site corrections, fuel limits, emissions, maintenance interval and budget cost.
+- Generic records are clearly labelled and cannot be presented as OEM guarantees.
+
+### FR-5 Sizing engine
+
+- Heat-led, electrical-led and constrained/manual modes.
+- Modular unit count and redundancy comparison.
+- Part-load and supplemental boiler calculation.
+- Reject cases violating energy balance or load limits.
+
+### FR-6 Heat and mass balance
+
+- Dynamic SVG diagram and stream table.
+- Export diagram to proposal PDF and XLSX.
+- Display gross/net basis and HHV/LHV basis prominently.
+
+### FR-7 Financial engine
+
+- Nominal MYR model with configurable escalation, tax, financing and project life.
+- Scenario manager for tariff, gas, CAPEX, availability, carbon price and incentive.
+- LCOE allocation methods are named, formula-visible and never mixed.
+- Sensitivity tables recalculate the underlying model.
+
+### FR-8 EECA and regulatory screen
+
+- Combined-energy threshold calculation and obligation timeline.
+- Separate project-approval checklist with owner, status, evidence and next action.
+- Effective-date and source version attached to each regulatory rule.
+
+### FR-9 Proposal generator
+
+- Raz-branded DOCX/PDF output with executive summary, customer baseline, recommended configuration, HMB, economics, emissions, compliance screen, scope, exclusions, risks, data quality, next step and validity.
+- Automatically suppress unavailable or unapproved claims.
+- Watermark `DRAFT` until both reviews pass.
+
+### FR-10 Audit and governance
+
+- Record old/new value, user, timestamp and reason for every override.
+- Calculation-engine semantic version in every export.
+- Admin-controlled source register and expiry/review dates.
+
+## 9. Core data model
+
+| Entity | Key fields |
+|---|---|
+| Client | legal name, industry, contacts, confidentiality status |
+| Site | address, state, jurisdiction, connection voltage, gas supply, coordinates |
+| Case | ID, stage, owner, revision, scenario, calculation version |
+| Evidence | file, source type, date range, hash, confidence, linked input |
+| Energy profile | timestamp/month, electricity kWh/kW, fuel and useful heat |
+| Thermal system | medium, flow, pressure, temperature, condensate, efficiency |
+| Equipment record | technology/model, curves, basis, source, valid dates |
+| Scenario | assumptions, selected configuration, overrides, reviewer status |
+| HMB stream | stream number, medium, mass, pressure, temperature, energy, source |
+| Financial case | CAPEX/OPEX/tariffs/fuel/tax/financing and calculated outputs |
+| Compliance gate | rule version, status, owner, evidence, action, due date |
+| Proposal | template version, snapshot, approvals, issue date, validity |
+
+## 10. Calculation rules and units
+
+- Store SI internally; preserve source units and conversion trace.
+- Use one declared HHV or LHV basis per calculation block. Never silently convert.
+- `1 MWh = 3.6 GJ`; `1 MMBtu = 1.055056 GJ`.
+- Annual generation = net capacity × available operating hours, constrained by dispatch/load.
+- Fuel input = gross electrical energy / electrical efficiency, with consistent basis and auxiliaries.
+- Useful heat = measured/derived thermal output actually usable by the process, not total exhaust energy.
+- EECA screen = annual grid electricity × 3.6 + fuel/resource energy converted to GJ. Do not subtract self-generation when reconstructing historic consumption.
+- All output formulas expose numerator, denominator, units and source assumptions through an audit view.
+
+## 11. Required proposal structure
+
+1. Cover and confidentiality.
+2. Executive indication and decision statement.
+3. Customer energy baseline and data quality.
+4. Recommended configuration and alternatives considered.
+5. Preliminary heat and mass balance.
+6. Fuel, electricity, steam/water and availability estimates.
+7. Budget CAPEX, OPEX, LCOE, savings, payback, NPV/IRR and sensitivities.
+8. Emissions and primary-energy impact with factor sources.
+9. EECA applicability and separate regulatory pathway.
+10. Scope of supply, battery limits, exclusions and customer responsibilities.
+11. Risks, qualifications and proposal validity.
+12. Paid feasibility-study scope, programme and information request.
+
+## 12. UX requirements
+
+- Wizard: `Qualify → Data → Baseline → Size → Balance → Economics → Compliance → Review → Issue`.
+- Persistent warning banner for screening status and data confidence.
+- Blue/yellow input, green linked value, black formula and red failure conventions in engineering views.
+- Every KPI opens a calculation trace.
+- Side-by-side scenario comparison limited to three cases.
+- Responsive desktop-first design; tablet view permitted, phone authoring not required.
+
+## 13. Issue gates
+
+| Gate | Blocking condition |
+|---|---|
+| Data | Mandatory input absent or source period below 12 months without approved qualification |
+| Engineering | Energy/water balance fails; site/OEM basis missing; capacity exceeds base-load rule without export approval |
+| Commercial | CAPEX, gas or tariff source missing; negative saving hidden; incentive unsupported |
+| Regulatory | EECA and project-approval pathways conflated; export/NEDA assumed without evidence |
+| Review | Technical or commercial approval absent |
+
+## 14. Non-functional requirements
+
+- Calculation reproducibility to the cent/unit precision from a saved snapshot.
+- Role-based access, MFA/SSO-ready, encryption in transit/at rest and Malaysian PDPA-aware retention.
+- Malware scanning and restricted attachment types.
+- Automated daily backup; restore objective ≤ 24 hours; service availability target 99.5% for MVP.
+- Page response under 2 seconds for normal forms; case calculation under 5 seconds; interval import of one year of 15-minute data under 60 seconds.
+- Unit, formula, regression, permission, export and audit-log tests in CI.
+
+## 15. MVP scope and roadmap
+
+### MVP — 6 to 8 weeks
+
+Case management, guided inputs, monthly/interval import, heat-led sizing, generic gas turbine/engine comparison, HMB stream table/SVG, annual financial model, EECA screen, regulatory checklist, review gates and PDF/DOCX proposal.
+
+### Release 1.1
+
+OEM library, part-load curves, NPV/IRR cash flow, tariff database with effective dates, richer sensitivities, DOCX editing and management dashboard.
+
+### Release 2
+
+Customer portal, automated utility-bill extraction, metering integrations, detailed steam-property service, GIS/site constraints, proposal e-signature and CRM integration.
+
+## 16. Acceptance criteria
+
+1. A reviewer can reproduce every headline output from displayed inputs and formulas.
+2. The EC booklet's two conceptual cases can be recreated within rounding when using the same assumptions.
+3. For the supplied LT16 reference case, output, heat rate, fuel-flow and HMB presentation can be mapped without external workbook links.
+4. A zero-value input is not treated as missing.
+5. Mixed HHV/LHV inputs produce a blocking warning.
+6. Export revenue remains zero by default and cannot be enabled without justification and reviewer approval.
+7. Incentive value remains zero unless evidence is attached and commercial approval is recorded.
+8. EECA screen shows `Applicable` at or above 21,600 GJ/12 months and correctly presents the compliance actions.
+9. The generated proposal is watermarked draft until approvals pass and carries calculation/template versions.
+10. Regression fixtures cover low-heat, heat-limited, electrical-limited, negative-saving, part-load, export-disabled and missing-data cases.
+
+## 17. Success metrics
+
+- Median time from complete data to first proposal below 4 engineer-hours.
+- At least 90% of issued proposals pass internal QA without rework.
+- At least 80% of material proposal inputs have direct evidence rather than estimates.
+- Conversion from qualified screen to paid feasibility study.
+- Variance between screening CAPEX/savings and feasibility result tracked and reduced over time.
+
+## 18. Source register
+
+- [Energy Commission — EECA 2024 overview](https://www.st.gov.my/stakeholders/energy-efficiency/energy-efficiency-and-conservation-act-eeca-2024)
+- [Energy Commission — Energy Consumer obligations and 21,600 GJ threshold](https://www.st.gov.my/stakeholders/energy-efficiency/energy-efficiency-and-conservation-act-eeca-2024/energy-consumer)
+- [Energy Commission — EECR 2024](https://www.st.gov.my/stakeholders/energy-efficiency/energy-efficiency-and-conservation-act-eeca-2024/energy-efficiency-conservation-regulation-eecr-2024)
+- [Energy Commission — thermal-efficiency guidance for boilers](https://www.st.gov.my/sites/default/files/2026-02/Thermal_Efficiency_Guidelines_for_Boilers1.pdf)
+- Supplied `Cogen_Guide.pdf` (Energy Commission Information Booklet Co-Generation, 2019 edition).
+- Supplied `LT16-CC-BUD-R0.xlsx`, `Price Calculation-R1.xlsx` and `Process Flow & Heat Balance1.pdf`.
+- [MGTC legacy GITA/GITE guideline](https://www.mgtc.gov.my/storage/2022/07/REC-GTGT-007-GUIDELINES-FOR-GREEN-TECHNOLOGY-TAX-INCENTIVE-GITAGITE.pdf) — retained only as an incentive-screening reference; current and project-specific eligibility must be confirmed.
+
+## Appendix A — Required API calculation payload
+
+```json
+{
+  "caseId": "string",
+  "calculationVersion": "semver",
+  "basis": {"currency": "MYR", "fuelBasis": "HHV", "timeZone": "Asia/Kuala_Lumpur"},
+  "loads": {"electricity": {}, "usefulHeat": {}, "operatingCalendar": {}},
+  "technology": {"type": "gas_turbine|recip_engine|steam_turbine", "units": []},
+  "commercial": {"tariff": {}, "fuel": {}, "capex": {}, "opex": {}, "financing": {}},
+  "regulatory": {"exportEnabled": false, "incentiveConfirmed": false},
+  "results": {"hmb": {}, "annual": {}, "cashFlow": {}, "emissions": {}, "checks": []}
+}
+```
+
+## Appendix B — Mandatory customer-facing disclaimer
+
+This assessment is a budget-level screening based on information supplied by the customer and stated assumptions. It is not an OEM guarantee, statutory energy audit, regulatory approval, tax opinion, construction design or binding offer. Final performance, cost, savings, emissions, approvals and programme are subject to verified operating data, site assessment, utility and authority engagement, OEM quotation and detailed engineering.
