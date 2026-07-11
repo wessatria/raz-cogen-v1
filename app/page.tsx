@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { calculateCogen, CALCULATION_VERSION } from "@/lib/cogen/calculate";
@@ -57,6 +57,7 @@ function formatNumber(value: number, digits = 0) {
 export default function Home() {
   const [input, setInput] = useState<CogenInput>(defaultInput);
   const [evidence] = useState<InputEvidence[]>(defaultEvidence);
+  const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
   const result = useMemo(() => calculateCogen(input, evidence), [input, evidence]);
   const blocking = result.checks.filter((check) => check.status === "block");
   const warnings = result.checks.filter((check) => check.status === "warning");
@@ -69,6 +70,34 @@ export default function Home() {
     setInput((current) => ({ ...current, [key]: !current[key] }));
   };
 
+  const generateWordProposal = async () => {
+    setIsGeneratingDocx(true);
+    try {
+      const response = await fetch("/api/proposals/docx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input, evidence }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Proposal generation failed");
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition");
+      const filename = disposition?.match(/filename="([^"]+)"/)?.[1] ?? "raz-cogen-proposal.docx";
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsGeneratingDocx(false);
+    }
+  };
   const proposalText = `Budget-Level Cogeneration Proposal\nPrepared for: ${input.clientName}\nSite: ${input.siteName}, ${input.state}\nCalculation version: ${CALCULATION_VERSION}\nStatus: ${result.issueStatus === "Issue ready" ? "READY TO ISSUE" : "DRAFT"}\n\nExecutive indication\nRaz Engineering has identified a preliminary ${result.netPowerMw} MW net ${result.selectedTechnology.toLowerCase()} cogeneration configuration sized primarily against the site's minimum coincident useful-heat demand and electrical base load. The screening case indicates ${formatNumber(result.annualGenerationMwh)} MWh/year, ${formatNumber(result.usefulHeatGJYear)} GJ/year useful heat, ${formatNumber(result.fuelInputMmbtuYear)} MMBtu/year fuel input, indicative installed CAPEX of ${formatMyr(result.capexMyr)}, annual saving of ${formatMyr(result.annualSavingMyr)}, and simple payback of ${result.simplePaybackYears ?? "not achieved"} years.\n\nEECA screen: ${result.eecaStatus} at ${formatNumber(result.eecaEnergyGJ)} GJ over 12 months. EECA applicability is shown separately from cogeneration project approvals. Export revenue is ${input.exportEnabled && input.exportApproved ? "included with approval" : "not assumed"}. Incentives are ${input.incentiveConfirmed ? "included with evidence" : "zero unless confirmed"}.\n\nDisclaimer\nThis assessment is a budget-level screening based on information supplied by the customer and stated assumptions. It is not an OEM guarantee, statutory energy audit, regulatory approval, tax opinion, construction design or binding offer.`;
 
   return (
@@ -200,7 +229,7 @@ export default function Home() {
               </div>
             </div>
             <div className="panel proposal">
-              <div className="panel-head"><h2>Proposal Snapshot</h2><span>{result.issueStatus === "Issue ready" ? "approved" : "DRAFT"}</span></div>
+              <div className="panel-head proposal-head"><div><h2>Proposal Snapshot</h2><span>{result.issueStatus === "Issue ready" ? "approved" : "DRAFT"}</span></div><button className="docx-button" type="button" onClick={generateWordProposal} disabled={isGeneratingDocx}>{isGeneratingDocx ? "Generating..." : "Generate Word Proposal"}</button></div>
               <pre>{proposalText}</pre>
             </div>
           </section>

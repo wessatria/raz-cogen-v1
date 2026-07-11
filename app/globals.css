@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 :root {
   color-scheme: light;
@@ -79,3 +79,9 @@ td small { display: block; margin-top: 3px; color: var(--muted); line-height: 1.
   .warning-band { grid-template-columns: 1fr; }
   .gate { grid-template-columns: 1fr; }
 }
+
+.proposal-head { align-items: flex-start; }
+.proposal-head > div { display: grid; gap: 8px; }
+.docx-button { min-height: 38px; border: 1px solid #235f52; border-radius: 6px; background: #235f52; color: #fff; font-weight: 700; padding: 0 13px; cursor: pointer; white-space: nowrap; }
+.docx-button:hover { background: #1b4b41; }
+.docx-button:disabled { cursor: wait; opacity: 0.65; }
