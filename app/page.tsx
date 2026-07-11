@@ -187,7 +187,9 @@ export default function Home() {
           <div className="panel">
             <div className="panel-head"><h2>Issue Controls</h2><span>gates</span></div>
             <button className="calculate-button" type="button" onClick={runCalculation}>Calculate</button>
-            {hasPendingChanges && <p className="pending-note">Inputs have changed. Click Calculate to refresh sizing, economics, gates, and proposal outputs.</p>}
+            <button className="save-button" type="button" onClick={saveCase} disabled={isSavingCase || hasPendingChanges}>{isSavingCase ? "Saving..." : "Save Case to Database"}</button>
+            {hasPendingChanges && <p className="pending-note">Inputs have changed. Click Calculate before saving to refresh sizing, economics, gates, and proposal outputs.</p>}
+            {saveMessage && <p className={saveMessage.startsWith("Saved") ? "save-note success" : "save-note error"}>{saveMessage}</p>}
             <label className="toggle"><input type="checkbox" checked={input.exportEnabled} onChange={() => updateFlag("exportEnabled")} /><span>Enable export scenario</span></label>
             <label className="toggle"><input type="checkbox" checked={input.exportApproved} onChange={() => updateFlag("exportApproved")} /><span>Export route approved</span></label>
             <label className="toggle"><input type="checkbox" checked={input.incentiveConfirmed} onChange={() => updateFlag("incentiveConfirmed")} /><span>Incentive evidence attached</span></label>
