@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { calculateCogen, CALCULATION_VERSION } from "@/lib/cogen/calculate";
-import { defaultEvidence, defaultInput, type CogenInput, type EvidenceAttachment, type InputEvidence } from "@/lib/cogen/model";
+import { defaultEvidence, defaultInput, type CogenInput, type EvidenceAttachment, type ExtractedInputSuggestion, type InputEvidence } from "@/lib/cogen/model";
 
 type NumberField = keyof Pick<CogenInput,
   "annualElectricityMwh" | "peakDemandMw" | "baseDemandMw" | "annualBoilerFuelMmbtu" | "averageSteamTph" |
@@ -75,6 +75,8 @@ export default function Home() {
   const [evidence] = useState<InputEvidence[]>(defaultEvidence);
   const [attachments, setAttachments] = useState<EvidenceAttachment[]>([]);
   const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<ExtractedInputSuggestion[]>([]);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
   const [isSavingCase, setIsSavingCase] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -143,6 +145,41 @@ export default function Home() {
   const removeAttachment = (id: string) => {
     setAttachments((current) => current.filter((item) => item.id !== id));
     setSaveMessage(null);
+  };
+
+  const extractSuggestions = async () => {
+    setIsExtracting(true);
+    setAttachmentMessage(null);
+    try {
+      const response = await fetch("/api/evidence/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attachments }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error ?? "Extraction failed");
+      setSuggestions(payload.suggestions ?? []);
+      if (!payload.suggestions?.length) setAttachmentMessage("No input values were confidently detected. Add a note beside the file or enter the values manually.");
+    } catch (error) {
+      setAttachmentMessage(error instanceof Error ? error.message : "Extraction failed");
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const updateSuggestion = (id: string, updates: Partial<ExtractedInputSuggestion>) => {
+    setSuggestions((current) => current.map((item) => item.id === id ? { ...item, ...updates } : item));
+  };
+
+  const rejectSuggestion = (id: string) => {
+    setSuggestions((current) => current.filter((item) => item.id !== id));
+  };
+
+  const applySuggestion = (suggestion: ExtractedInputSuggestion) => {
+    setInput((current) => ({ ...current, [suggestion.targetKey]: suggestion.value }));
+    setHasPendingChanges(true);
+    setSaveMessage(null);
+    setSuggestions((current) => current.filter((item) => item.id !== suggestion.id));
   };
 
   const saveCase = async () => {
@@ -254,7 +291,35 @@ export default function Home() {
               <strong>Add PDF or image evidence</strong>
               <span>Electricity bills, gas invoices, site photos, nameplates, SLDs, and approval letters. Max 8 MB each.</span>
             </label>
+            <button className="extract-button" type="button" onClick={extractSuggestions} disabled={isExtracting || attachments.length === 0}>{isExtracting ? "Extracting..." : "Extract Suggestions"}</button>
+            {suggestions.length > 0 && <p className="suggestion-help">Review, edit, then apply suggestions. Values are never written into inputs until accepted.</p>}
             {attachmentMessage && <p className="save-note error">{attachmentMessage}</p>}
+            {suggestions.length > 0 && (
+              <div className="suggestion-list">
+                {suggestions.map((suggestion) => (
+                  <div className="suggestion-item" key={suggestion.id}>
+                    <div>
+                      <b>{suggestion.label}</b>
+                      <small>{suggestion.documentType.replace(/_/g, " ")} / {suggestion.sourceFile} / {suggestion.confidence} confidence</small>
+                    </div>
+                    <label>
+                      <span>Suggested value</span>
+                      <input type="number" value={suggestion.value} onChange={(event) => updateSuggestion(suggestion.id, { value: Number(event.target.value) })} />
+                    </label>
+                    <label>
+                      <span>Unit</span>
+                      <input value={suggestion.unit} onChange={(event) => updateSuggestion(suggestion.id, { unit: event.target.value })} />
+                    </label>
+                    <p>{suggestion.reason}</p>
+                    {suggestion.excerpt && <small className="suggestion-excerpt">{suggestion.excerpt}</small>}
+                    <div className="suggestion-actions">
+                      <button type="button" onClick={() => applySuggestion(suggestion)}>Apply to Input</button>
+                      <button type="button" onClick={() => rejectSuggestion(suggestion.id)}>Reject</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="attachment-list">
               {attachments.map((attachment) => (
                 <div className="attachment-item" key={attachment.id}>

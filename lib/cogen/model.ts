@@ -58,6 +58,19 @@ export type EvidenceAttachment = {
   note: string;
   dataUrl?: string;
 };
+
+export type ExtractedInputSuggestion = {
+  id: string;
+  targetKey: keyof CogenInput;
+  label: string;
+  value: number;
+  unit: string;
+  sourceFile: string;
+  documentType: "electricity_bill" | "gas_invoice" | "steam_log" | "equipment_data" | "general_evidence";
+  confidence: Confidence;
+  reason: string;
+  excerpt: string;
+};
 export type Check = {
   gate: "data" | "engineering" | "commercial" | "regulatory" | "review";
   status: "pass" | "warning" | "block";
