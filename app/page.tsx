@@ -59,6 +59,8 @@ export default function Home() {
   const [calculationInput, setCalculationInput] = useState<CogenInput>(defaultInput);
   const [evidence] = useState<InputEvidence[]>(defaultEvidence);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
+  const [isSavingCase, setIsSavingCase] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
   const result = useMemo(() => calculateCogen(calculationInput, evidence), [calculationInput, evidence]);
   const blocking = result.checks.filter((check) => check.status === "block");
@@ -79,6 +81,29 @@ export default function Home() {
     setHasPendingChanges(false);
   };
 
+
+  const saveCase = async () => {
+    setIsSavingCase(true);
+    setSaveMessage(null);
+    try {
+      const response = await fetch("/api/cases/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: calculationInput, evidence }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Case save failed");
+      }
+
+      setSaveMessage(`Saved ${payload.caseCode} to database.`);
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : "Case save failed");
+    } finally {
+      setIsSavingCase(false);
+    }
+  };
   const generateWordProposal = async () => {
     setIsGeneratingDocx(true);
     try {
@@ -134,11 +159,11 @@ export default function Home() {
               <h2>Case</h2>
               <span>Stage 0-1</span>
             </div>
-            <label className="field wide"><span>Client</span><input value={input.clientName} onChange={(event) => { setHasPendingChanges(true); setInput({ ...input, clientName: event.target.value }); }} /></label>
-            <label className="field wide"><span>Site</span><input value={input.siteName} onChange={(event) => { setHasPendingChanges(true); setInput({ ...input, siteName: event.target.value }); }} /></label>
+            <label className="field wide"><span>Client</span><input value={input.clientName} onChange={(event) => { setHasPendingChanges(true); setSaveMessage(null); setInput({ ...input, clientName: event.target.value }); }} /></label>
+            <label className="field wide"><span>Site</span><input value={input.siteName} onChange={(event) => { setHasPendingChanges(true); setSaveMessage(null); setInput({ ...input, siteName: event.target.value }); }} /></label>
             <div className="grid grid-cols-2 gap-3">
-              <label className="field"><span>Industry</span><input value={input.industry} onChange={(event) => { setHasPendingChanges(true); setInput({ ...input, industry: event.target.value }); }} /></label>
-              <label className="field"><span>State</span><input value={input.state} onChange={(event) => { setHasPendingChanges(true); setInput({ ...input, state: event.target.value }); }} /></label>
+              <label className="field"><span>Industry</span><input value={input.industry} onChange={(event) => { setHasPendingChanges(true); setSaveMessage(null); setInput({ ...input, industry: event.target.value }); }} /></label>
+              <label className="field"><span>State</span><input value={input.state} onChange={(event) => { setHasPendingChanges(true); setSaveMessage(null); setInput({ ...input, state: event.target.value }); }} /></label>
             </div>
           </div>
 
