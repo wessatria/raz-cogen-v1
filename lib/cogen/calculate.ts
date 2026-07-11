@@ -70,7 +70,10 @@ export function calculateCogen(input: CogenInput, evidence: InputEvidence[]): Co
   const annualGenerationMwh = netPowerMw * input.operatingHours;
   const usefulHeatGJYear = usefulHeatMwAverage * input.operatingHours * MWH_TO_GJ;
   const fuelInputMmbtuYear = annualGenerationMwh / electricalEfficiency * MWH_TO_GJ / MMBTU_TO_GJ;
-  const capexMyr = netPowerMw * input.capexMyrPerMw - (input.incentiveConfirmed ? input.incentiveMyr : 0);
+  const installedCapexMyr = netPowerMw * input.capexMyrPerMw;
+  const tnbRecoveryMyr = Math.max(0, input.tnbInfrastructureRecoveryMyr);
+  const incentiveMyr = input.incentiveConfirmed ? input.incentiveMyr : 0;
+  const capexMyr = installedCapexMyr + tnbRecoveryMyr - incentiveMyr;
 
   const bauElectricityMyr = input.annualElectricityMwh * 1000 * input.gridEnergyTariffMyrKwh;
   const bauDemandMyr = input.peakDemandMw * 1000 * input.demandChargeMyrKwMonth * 12;

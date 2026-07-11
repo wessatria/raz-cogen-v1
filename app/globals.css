@@ -92,6 +92,9 @@ td small { display: block; margin-top: 3px; color: var(--muted); line-height: 1.
 .save-button { width: 100%; min-height: 42px; border: 1px solid #235f52; border-radius: 6px; background: #235f52; color: #fff; font-weight: 800; cursor: pointer; margin-bottom: 10px; }
 .save-button:hover { background: #1b4b41; }
 .save-button:disabled { cursor: not-allowed; opacity: 0.55; }
+.info-button { width: 100%; min-height: 42px; border: 1px solid #c79a32; border-radius: 6px; background: #c79a32; color: #17202a; font-weight: 800; cursor: pointer; margin-bottom: 10px; }
+.info-button:hover { background: #b88924; }
+.info-button:disabled { cursor: not-allowed; opacity: 0.55; }
 .save-note { margin: 0 0 12px; border-radius: 6px; padding: 9px 10px; font-size: 13px; line-height: 1.4; }
 .save-note.success { border: 1px solid #bbf7d0; background: #f0fdf4; color: #166534; }
 .save-note.error { border: 1px solid #fecaca; background: #fef2f2; color: #991b1b; }

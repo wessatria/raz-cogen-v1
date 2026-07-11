@@ -10,7 +10,7 @@ type NumberField = keyof Pick<CogenInput,
   "boilerEfficiencyPercent" | "operatingHours" | "gridEnergyTariffMyrKwh" | "demandChargeMyrKwMonth" |
   "gasPriceMyrMmbtu" | "waterTreatmentMyrGJ" | "capexMyrPerMw" | "fixedOmMyrKwYear" |
   "variableOmMyrMwh" | "overhaulReserveMyrMwh" | "projectLifeYears" | "discountRatePercent" |
-  "carbonPriceMyrTonne" | "incentiveMyr"
+  "carbonPriceMyrTonne" | "tnbInfrastructureRecoveryMyr" | "incentiveMyr"
 >;
 
 const fieldGroups: Array<{ title: string; fields: Array<{ key: NumberField; label: string; suffix: string }> }> = [
@@ -42,6 +42,7 @@ const fieldGroups: Array<{ title: string; fields: Array<{ key: NumberField; labe
     { key: "projectLifeYears", label: "Project life", suffix: "years" },
     { key: "discountRatePercent", label: "Discount rate", suffix: "%" },
     { key: "carbonPriceMyrTonne", label: "Carbon scenario", suffix: "RM/tCO2e" },
+    { key: "tnbInfrastructureRecoveryMyr", label: "TNB recovery placeholder", suffix: "RM" },
     { key: "incentiveMyr", label: "Confirmed incentive", suffix: "RM" },
   ] },
 ];
@@ -78,6 +79,7 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<ExtractedInputSuggestion[]>([]);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
+  const [isGeneratingInfoRequest, setIsGeneratingInfoRequest] = useState(false);
   const [isSavingCase, setIsSavingCase] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
@@ -204,6 +206,35 @@ export default function Home() {
       setIsSavingCase(false);
     }
   };
+  const generateMissingInfoRequest = async () => {
+    setIsGeneratingInfoRequest(true);
+    try {
+      const response = await fetch("/api/missing-info/xls", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: calculationInput, evidence, attachments }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Missing information form generation failed");
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition");
+      const filename = disposition?.match(/filename="([^"]+)"/)?.[1] ?? "raz-missing-info-request.xls";
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsGeneratingInfoRequest(false);
+    }
+  };
+
   const generateWordProposal = async () => {
     setIsGeneratingDocx(true);
     try {
@@ -232,7 +263,7 @@ export default function Home() {
       setIsGeneratingDocx(false);
     }
   };
-  const proposalText = `Budget-Level Cogeneration Proposal\nPrepared for: ${calculationInput.clientName}\nSite: ${calculationInput.siteName}, ${calculationInput.state}\nCalculation version: ${CALCULATION_VERSION}\nStatus: ${result.issueStatus === "Issue ready" ? "READY TO ISSUE" : "DRAFT"}\n\nExecutive indication\nRaz Engineering has identified a preliminary ${result.netPowerMw} MW net ${result.selectedTechnology.toLowerCase()} cogeneration configuration sized primarily against the site's minimum coincident useful-heat demand and electrical base load. The screening case indicates ${formatNumber(result.annualGenerationMwh)} MWh/year, ${formatNumber(result.usefulHeatGJYear)} GJ/year useful heat, ${formatNumber(result.fuelInputMmbtuYear)} MMBtu/year fuel input, indicative installed CAPEX of ${formatMyr(result.capexMyr)}, annual saving of ${formatMyr(result.annualSavingMyr)}, and simple payback of ${result.simplePaybackYears ?? "not achieved"} years.\n\nEECA screen: ${result.eecaStatus} at ${formatNumber(result.eecaEnergyGJ)} GJ over 12 months. EECA applicability is shown separately from cogeneration project approvals. Export revenue is ${calculationInput.exportEnabled && calculationInput.exportApproved ? "included with approval" : "not assumed"}. Incentives are ${calculationInput.incentiveConfirmed ? "included with evidence" : "zero unless confirmed"}.\n\nDisclaimer\nThis assessment is a budget-level screening based on information supplied by the customer and stated assumptions. It is not an OEM guarantee, statutory energy audit, regulatory approval, tax opinion, construction design or binding offer.`;
+  const proposalText = `Budget-Level Cogeneration Proposal\nPrepared for: ${calculationInput.clientName}\nSite: ${calculationInput.siteName}, ${calculationInput.state}\nCalculation version: ${CALCULATION_VERSION}\nStatus: ${result.issueStatus === "Issue ready" ? "READY TO ISSUE" : "DRAFT"}\n\nExecutive indication\nRaz Engineering has identified a preliminary ${result.netPowerMw} MW net ${result.selectedTechnology.toLowerCase()} cogeneration configuration sized primarily against the site's minimum coincident useful-heat demand and electrical base load. The screening case indicates ${formatNumber(result.annualGenerationMwh)} MWh/year, ${formatNumber(result.usefulHeatGJYear)} GJ/year useful heat, ${formatNumber(result.fuelInputMmbtuYear)} MMBtu/year fuel input, indicative total project investment of ${formatMyr(result.capexMyr)} including any TNB infrastructure recovery placeholder, annual saving of ${formatMyr(result.annualSavingMyr)}, and simple payback of ${result.simplePaybackYears ?? "not achieved"} years.\n\nEECA screen: ${result.eecaStatus} at ${formatNumber(result.eecaEnergyGJ)} GJ over 12 months. EECA applicability is shown separately from cogeneration project approvals. Export revenue is ${calculationInput.exportEnabled && calculationInput.exportApproved ? "included with approval" : "not assumed"}. Incentives are ${calculationInput.incentiveConfirmed ? "included with evidence" : "zero unless confirmed"}.\n\nDisclaimer\nThis assessment is a budget-level screening based on information supplied by the customer and stated assumptions. It is not an OEM guarantee, statutory energy audit, regulatory approval, tax opinion, construction design or binding offer.`;
 
   return (
     <main className="min-h-screen bg-[#f6f7f9] text-[#18202a]">
@@ -356,6 +387,7 @@ export default function Home() {
             <div className="panel-head"><h2>Issue Controls</h2><span>gates</span></div>
             <button className="calculate-button" type="button" onClick={runCalculation}>Calculate</button>
             <button className="save-button" type="button" onClick={saveCase} disabled={isSavingCase || hasPendingChanges}>{isSavingCase ? "Saving..." : "Save Case to Database"}</button>
+            <button className="info-button" type="button" onClick={generateMissingInfoRequest} disabled={isGeneratingInfoRequest || hasPendingChanges}>{isGeneratingInfoRequest ? "Generating..." : "Generate Missing Info Excel"}</button>
             {hasPendingChanges && <p className="pending-note">Inputs have changed. Click Calculate before saving to refresh sizing, economics, gates, and proposal outputs.</p>}
             {saveMessage && <p className={saveMessage.startsWith("Saved") ? "save-note success" : "save-note error"}>{saveMessage}</p>}
             <label className="toggle"><input type="checkbox" checked={input.exportEnabled} onChange={() => updateFlag("exportEnabled")} /><span>Enable export scenario</span></label>
@@ -430,7 +462,8 @@ export default function Home() {
               <div className="metric-list">
                 <p><span>Business-as-usual cost</span><b>{formatMyr(result.bauCostMyr)}</b></p>
                 <p><span>Cogeneration case cost</span><b>{formatMyr(result.cogenCostMyr)}</b></p>
-                <p><span>Installed CAPEX</span><b>{formatMyr(result.capexMyr)}</b></p>
+                <p><span>Total project investment</span><b>{formatMyr(result.capexMyr)}</b></p>
+                <p><span>TNB infrastructure recovery</span><b>{formatMyr(calculationInput.tnbInfrastructureRecoveryMyr)}</b></p>
                 <p><span>Emissions saved</span><b>{formatNumber(result.emissionsSavedTco2e)} tCO2e/y</b></p>
                 <p><span>Fuel input</span><b>{formatNumber(result.fuelInputMmbtuYear)} MMBtu/y</b></p>
               </div>

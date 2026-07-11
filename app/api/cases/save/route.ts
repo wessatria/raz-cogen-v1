@@ -59,6 +59,7 @@ function inputRows(caseId: string, input: CogenInput, evidence: InputEvidence[])
     projectLifeYears: { label: "Project life", unit: "years" },
     discountRatePercent: { label: "Discount rate", unit: "%" },
     carbonPriceMyrTonne: { label: "Carbon scenario", unit: "RM/tCO2e" },
+    tnbInfrastructureRecoveryMyr: { label: "TNB infrastructure recovery", unit: "RM" },
     exportEnabled: { label: "Export enabled" },
     exportApproved: { label: "Export approved" },
     incentiveConfirmed: { label: "Incentive confirmed" },

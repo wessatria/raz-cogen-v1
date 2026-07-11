@@ -30,6 +30,7 @@ const rules: Rule[] = [
   { key: "demandChargeMyrKwMonth", label: "Demand charge", unit: "RM/kW-month", patterns: [/demand\s+charge[^0-9]{0,20}([\d,.]+)\s*rm\/kw/i] },
   { key: "gasPriceMyrMmbtu", label: "Gas price", unit: "RM/MMBtu", patterns: [/gas\s+price[^0-9]{0,20}([\d,.]+)\s*rm\/mmbtu/i, /fuel\s+price[^0-9]{0,20}([\d,.]+)\s*rm\/mmbtu/i] },
   { key: "boilerEfficiencyPercent", label: "Boiler efficiency", unit: "%", patterns: [/boiler\s+efficiency[^0-9]{0,20}([\d,.]+)\s*%/i] },
+  { key: "tnbInfrastructureRecoveryMyr", label: "TNB infrastructure recovery", unit: "RM", patterns: [/(?:tnb|utility)[^\n]{0,80}(?:infrastructure|capital|recovery|contribution|reimbursement|unamortized|unamortised)[^0-9]{0,30}(?:rm\s*)?([\d,.]+)/i, /(?:capital\s+contribution|infrastructure\s+recovery|unamorti[sz]ed\s+asset)[^0-9]{0,30}(?:rm\s*)?([\d,.]+)/i] },
 ];
 
 function classify(attachment: EvidenceAttachment) {

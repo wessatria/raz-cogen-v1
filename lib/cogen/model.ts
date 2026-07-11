@@ -29,6 +29,7 @@ export type CogenInput = {
   projectLifeYears: number;
   discountRatePercent: number;
   carbonPriceMyrTonne: number;
+  tnbInfrastructureRecoveryMyr: number;
   exportEnabled: boolean;
   exportApproved: boolean;
   incentiveConfirmed: boolean;
@@ -144,6 +145,7 @@ export const defaultInput: CogenInput = {
   projectLifeYears: 12,
   discountRatePercent: 9,
   carbonPriceMyrTonne: 0,
+  tnbInfrastructureRecoveryMyr: 0,
   exportEnabled: false,
   exportApproved: false,
   incentiveConfirmed: false,
