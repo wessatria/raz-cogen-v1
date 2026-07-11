@@ -248,6 +248,46 @@ export default function Home() {
           ))}
 
           <div className="panel">
+            <div className="panel-head"><h2>Evidence Attachments</h2><span>PDF / image</span></div>
+            <label className="upload-drop">
+              <input type="file" accept="application/pdf,image/png,image/jpeg,image/webp" multiple onChange={(event) => addAttachments(event.target.files)} />
+              <strong>Add PDF or image evidence</strong>
+              <span>Electricity bills, gas invoices, site photos, nameplates, SLDs, and approval letters. Max 8 MB each.</span>
+            </label>
+            {attachmentMessage && <p className="save-note error">{attachmentMessage}</p>}
+            <div className="attachment-list">
+              {attachments.map((attachment) => (
+                <div className="attachment-item" key={attachment.id}>
+                  <div>
+                    <b>{attachment.fileName}</b>
+                    <small>{attachment.sourceType.toUpperCase()} / {(attachment.sizeBytes / 1024 / 1024).toFixed(2)} MB</small>
+                  </div>
+                  <label>
+                    <span>Linked input</span>
+                    <select value={attachment.linkedInputKey} onChange={(event) => updateAttachment(attachment.id, { linkedInputKey: event.target.value as keyof CogenInput })}>
+                      {fieldGroups.flatMap((group) => group.fields).map((field) => <option key={field.key} value={field.key}>{field.label}</option>)}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Confidence</span>
+                    <select value={attachment.confidence} onChange={(event) => updateAttachment(attachment.id, { confidence: event.target.value as EvidenceAttachment["confidence"] })}>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                  </label>
+                  <label className="attachment-note">
+                    <span>Note</span>
+                    <input value={attachment.note} onChange={(event) => updateAttachment(attachment.id, { note: event.target.value })} />
+                  </label>
+                  <button type="button" onClick={() => removeAttachment(attachment.id)}>Remove</button>
+                </div>
+              ))}
+              {attachments.length === 0 && <p className="attachment-empty">No evidence files attached yet.</p>}
+            </div>
+          </div>
+
+          <div className="panel">
             <div className="panel-head"><h2>Issue Controls</h2><span>gates</span></div>
             <button className="calculate-button" type="button" onClick={runCalculation}>Calculate</button>
             <button className="save-button" type="button" onClick={saveCase} disabled={isSavingCase || hasPendingChanges}>{isSavingCase ? "Saving..." : "Save Case to Database"}</button>
