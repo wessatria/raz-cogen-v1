@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { calculateCogen, CALCULATION_VERSION } from "@/lib/cogen/calculate";
-import { defaultEvidence, defaultInput, type CogenInput, type InputEvidence } from "@/lib/cogen/model";
+import { defaultEvidence, defaultInput, type CogenInput, type EvidenceAttachment, type InputEvidence } from "@/lib/cogen/model";
 
 type NumberField = keyof Pick<CogenInput,
   "annualElectricityMwh" | "peakDemandMw" | "baseDemandMw" | "annualBoilerFuelMmbtu" | "averageSteamTph" |
@@ -54,10 +54,27 @@ function formatNumber(value: number, digits = 0) {
   return new Intl.NumberFormat("en-MY", { maximumFractionDigits: digits }).format(value);
 }
 
+function sourceTypeForFile(file: File): "pdf" | "image" | null {
+  if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) return "pdf";
+  if (file.type.startsWith("image/")) return "image";
+  return null;
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function Home() {
   const [input, setInput] = useState<CogenInput>(defaultInput);
   const [calculationInput, setCalculationInput] = useState<CogenInput>(defaultInput);
   const [evidence] = useState<InputEvidence[]>(defaultEvidence);
+  const [attachments, setAttachments] = useState<EvidenceAttachment[]>([]);
+  const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
   const [isSavingCase, setIsSavingCase] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -82,6 +99,52 @@ export default function Home() {
   };
 
 
+  const addAttachments = async (files: FileList | null) => {
+    setAttachmentMessage(null);
+    if (!files?.length) return;
+
+    const accepted: EvidenceAttachment[] = [];
+    for (const file of Array.from(files)) {
+      const sourceType = sourceTypeForFile(file);
+      if (!sourceType) {
+        setAttachmentMessage("Only PDF and image evidence files are accepted.");
+        continue;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        setAttachmentMessage("Each evidence file must be 8 MB or smaller for this MVP.");
+        continue;
+      }
+
+      accepted.push({
+        id: String(Date.now()) + "-" + file.name + "-" + accepted.length,
+        linkedInputKey: "annualElectricityMwh",
+        fileName: file.name,
+        fileType: file.type || (sourceType === "pdf" ? "application/pdf" : "image/*"),
+        sizeBytes: file.size,
+        sourceType,
+        status: "provided",
+        confidence: "high",
+        note: "Uploaded evidence attachment",
+        dataUrl: await readFileAsDataUrl(file),
+      });
+    }
+
+    if (accepted.length) {
+      setAttachments((current) => [...current, ...accepted]);
+      setSaveMessage(null);
+    }
+  };
+
+  const updateAttachment = (id: string, updates: Partial<EvidenceAttachment>) => {
+    setAttachments((current) => current.map((item) => item.id === id ? { ...item, ...updates } : item));
+    setSaveMessage(null);
+  };
+
+  const removeAttachment = (id: string) => {
+    setAttachments((current) => current.filter((item) => item.id !== id));
+    setSaveMessage(null);
+  };
+
   const saveCase = async () => {
     setIsSavingCase(true);
     setSaveMessage(null);
@@ -89,7 +152,7 @@ export default function Home() {
       const response = await fetch("/api/cases/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: calculationInput, evidence }),
+        body: JSON.stringify({ input: calculationInput, evidence, attachments }),
       });
       const payload = await response.json();
 

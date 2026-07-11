@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { calculateCogen, CALCULATION_VERSION } from "@/lib/cogen/calculate";
-import type { CogenInput, InputEvidence } from "@/lib/cogen/model";
+import type { CogenInput, EvidenceAttachment, InputEvidence } from "@/lib/cogen/model";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 type SaveCaseRequest = {
   input: CogenInput;
   evidence: InputEvidence[];
+  attachments?: EvidenceAttachment[];
 };
 
 function caseCode(input: CogenInput) {
@@ -16,6 +17,18 @@ function caseCode(input: CogenInput) {
   return `RCG-${stamp}-${client || "CASE"}`;
 }
 
+function decodeDataUrl(dataUrl: string) {
+  const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
+  if (!match) return null;
+  return {
+    mimeType: match[1],
+    bytes: Buffer.from(match[2], "base64"),
+  };
+}
+
+function storageName(fileName: string) {
+  return fileName.replace(/[^a-z0-9.\-_]+/gi, "-").replace(/(^-|-$)/g, "").toLowerCase();
+}
 function inputRows(caseId: string, input: CogenInput, evidence: InputEvidence[]) {
   const evidenceByKey = new Map(evidence.map((item) => [item.key, item]));
   const labels: Record<keyof CogenInput, { label: string; unit?: string }> = {
@@ -133,6 +146,26 @@ export async function POST(request: Request) {
   const { error: inputsError } = await supabase.from("case_inputs").insert(inputRows(caseId, payload.input, payload.evidence));
   if (inputsError) return NextResponse.json({ error: inputsError.message }, { status: 500 });
 
+  const savedAttachments: Array<{ attachment: EvidenceAttachment; storagePath: string | null; hash: string | null }> = [];
+  for (const attachment of payload.attachments ?? []) {
+    let storagePath: string | null = null;
+    let hash: string | null = null;
+    if (attachment.dataUrl) {
+      const decoded = decodeDataUrl(attachment.dataUrl);
+      if (decoded) {
+        storagePath = `${caseId}/${attachment.id}-${storageName(attachment.fileName)}`;
+        hash = `${attachment.sizeBytes}-${attachment.fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("case-evidence")
+          .upload(storagePath, decoded.bytes, {
+            contentType: decoded.mimeType,
+            upsert: true,
+          });
+        if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
+      }
+    }
+    savedAttachments.push({ attachment, storagePath, hash });
+  }
   if (payload.evidence.length > 0) {
     const { error: evidenceError } = await supabase.from("evidence").insert(
       payload.evidence.map((item) => ({
@@ -147,6 +180,21 @@ export async function POST(request: Request) {
     if (evidenceError) return NextResponse.json({ error: evidenceError.message }, { status: 500 });
   }
 
+
+  if (savedAttachments.length > 0) {
+    const { error: attachmentEvidenceError } = await supabase.from("evidence").insert(
+      savedAttachments.map(({ attachment, storagePath, hash }) => ({
+        case_id: caseId,
+        linked_input_key: attachment.linkedInputKey,
+        file_name: attachment.fileName,
+        source_type: attachment.sourceType,
+        date_range: attachment.note || "Uploaded evidence attachment",
+        file_hash: hash ?? storagePath,
+        confidence: attachment.confidence,
+      })),
+    );
+    if (attachmentEvidenceError) return NextResponse.json({ error: attachmentEvidenceError.message }, { status: 500 });
+  }
   const { data: scenario, error: scenarioError } = await supabase
     .from("scenarios")
     .insert({

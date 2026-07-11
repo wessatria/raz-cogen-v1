@@ -45,6 +45,19 @@ export type InputEvidence = {
   confidence: Confidence;
 };
 
+
+export type EvidenceAttachment = {
+  id: string;
+  linkedInputKey: keyof CogenInput;
+  fileName: string;
+  fileType: string;
+  sizeBytes: number;
+  sourceType: "pdf" | "image";
+  status: EvidenceStatus;
+  confidence: Confidence;
+  note: string;
+  dataUrl?: string;
+};
 export type Check = {
   gate: "data" | "engineering" | "commercial" | "regulatory" | "review";
   status: "pass" | "warning" | "block";
