@@ -272,7 +272,18 @@ export async function POST(request: Request) {
             ["Emissions saved", `${formatNumber(result.emissionsSavedTco2e)} tCO2e/year`],
           ]),
 
-          heading("6. EECA and Project-Approval Screen"),
+          heading("6. SOP and Handbook Alignment"),
+          table([
+            ["Formula / benchmark", "Screening result"],
+            ["CCPP benchmark", `${formatNumber(result.sopHeatRateBtuKwh)} Btu/kWh, ${result.sopNetEfficiencyPercent}% net efficiency`],
+            ["PURPA efficiency", `${result.purpaEfficiencyPercent}% versus 42.5% threshold`],
+            ["HRSG steam formula", `${result.hrsgSteamTph} t/h based on exhaust flow, cp, deltaT, 0.985 radiation factor and enthalpy rise`],
+            ["Ambient performance derate", `${result.ambientDeratePercent}% power output reduction`],
+            ["Availability / reliability", `${result.availabilityPercent}% / ${result.reliabilityPercent}%`],
+            ["Risk", `${formatMyr(result.riskScoreMyr)} probability-weighted consequence`],
+          ]),
+
+          heading("7. EECA and Project-Approval Screen"),
           table([
             ["Gate", "Status / next action"],
             ["Combined 12-month energy", `${formatNumber(result.eecaEnergyGJ)} GJ`],
@@ -285,7 +296,7 @@ export async function POST(request: Request) {
           ]),
           para("EECA applicability is not a cogeneration project approval. Final requirements must be confirmed with the Energy Commission, utility/Single Buyer and other competent authorities."),
 
-          heading("7. Issue Gates"),
+          heading("8. Issue Gates"),
           table([
             ["Gate", "Severity", "Message"],
             ...(result.checks.length
@@ -293,12 +304,12 @@ export async function POST(request: Request) {
               : [["All", "pass", "No active warnings or blockers."]]),
           ]),
 
-          heading("8. Recommended Next Engagement"),
+          heading("9. Recommended Next Engagement"),
           para(
             "Raz Engineering recommends a paid feasibility study covering interval-data validation, site walkdown, metering plan, verified heat and mass balance, OEM budget quotation, utility and regulatory pre-consultation, layout and tie-in review, risk register, implementation programme and investment-grade financial model.",
           ),
 
-          heading("9. Disclaimer"),
+          heading("10. Disclaimer"),
           para(
             "This assessment is a budget-level screening based on information supplied by the customer and stated assumptions. It is not an OEM guarantee, statutory energy audit, regulatory approval, tax opinion, construction design or binding offer. Final performance, cost, savings, emissions, approvals and programme are subject to verified operating data, site assessment, utility and authority engagement, OEM quotation and detailed engineering.",
           ),

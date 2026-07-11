@@ -10,7 +10,7 @@ type NumberField = keyof Pick<CogenInput,
   "boilerEfficiencyPercent" | "operatingHours" | "gridEnergyTariffMyrKwh" | "demandChargeMyrKwMonth" |
   "gasPriceMyrMmbtu" | "waterTreatmentMyrGJ" | "capexMyrPerMw" | "fixedOmMyrKwYear" |
   "variableOmMyrMwh" | "overhaulReserveMyrMwh" | "projectLifeYears" | "discountRatePercent" |
-  "carbonPriceMyrTonne" | "tnbInfrastructureRecoveryMyr" | "incentiveMyr"
+  "carbonPriceMyrTonne" | "tnbInfrastructureRecoveryMyr" | "ambientTemperatureC" | "referenceAmbientTemperatureC" | "exhaustMassFlowKgS" | "exhaustTemperatureC" | "stackTemperatureC" | "steamEnthalpyRiseKjKg" | "plannedMaintenanceHours" | "forcedOutageHours" | "equivalentForcedOutageHours" | "riskProbabilityPercent" | "riskConsequenceMyr" | "incentiveMyr"
 >;
 
 const fieldGroups: Array<{ title: string; fields: Array<{ key: NumberField; label: string; suffix: string }> }> = [
@@ -29,6 +29,19 @@ const fieldGroups: Array<{ title: string; fields: Array<{ key: NumberField; labe
     { key: "steamTemperatureC", label: "Steam temperature", suffix: "C" },
     { key: "condensateReturnPercent", label: "Condensate return", suffix: "%" },
     { key: "boilerEfficiencyPercent", label: "Boiler efficiency", suffix: "% HHV" },
+  ] },
+  { title: "SOP Technical Checks", fields: [
+    { key: "ambientTemperatureC", label: "Ambient temperature", suffix: "C" },
+    { key: "referenceAmbientTemperatureC", label: "Derate reference", suffix: "C" },
+    { key: "exhaustMassFlowKgS", label: "GT exhaust flow", suffix: "kg/s" },
+    { key: "exhaustTemperatureC", label: "GT exhaust temp", suffix: "C" },
+    { key: "stackTemperatureC", label: "Stack temp", suffix: "C" },
+    { key: "steamEnthalpyRiseKjKg", label: "Steam enthalpy rise", suffix: "kJ/kg" },
+    { key: "plannedMaintenanceHours", label: "Planned maintenance", suffix: "h/y" },
+    { key: "forcedOutageHours", label: "Forced outage", suffix: "h/y" },
+    { key: "equivalentForcedOutageHours", label: "Equivalent forced outage", suffix: "h/y" },
+    { key: "riskProbabilityPercent", label: "Failure probability", suffix: "%" },
+    { key: "riskConsequenceMyr", label: "Failure consequence", suffix: "RM" },
   ] },
   { title: "Commercial Basis", fields: [
     { key: "gridEnergyTariffMyrKwh", label: "Grid energy", suffix: "RM/kWh" },
@@ -413,6 +426,8 @@ export default function Home() {
               ["NPV / IRR", `${formatMyr(result.npvMyr)} / ${result.irrPercent ?? "n/a"}%`, `${calculationInput.projectLifeYears} year model`],
               ["LCOE", `RM ${result.lcoeMyrKwh}/kWh`, `Heat credit RM ${result.heatCreditNetPowerMyrKwh}/kWh`],
               ["EECA", result.eecaStatus, `${formatNumber(result.eecaEnergyGJ)} GJ/12 months`],
+              ["SOP efficiency", `${result.purpaEfficiencyPercent}%`, result.purpaQualified ? "Meets 42.5% threshold" : "Below 42.5% threshold"],
+              ["Availability", `${result.availabilityPercent}%`, `${result.reliabilityPercent}% reliability`],
             ].map(([label, value, note]) => (
               <article className="kpi" key={label}>
                 <span>{label}</span>
@@ -420,6 +435,33 @@ export default function Home() {
                 <small>{note}</small>
               </article>
             ))}
+          </section>
+
+          <section className="two-col">
+            <div className="panel no-pad">
+              <div className="panel-head padded"><h2>SOP Performance Checks</h2><span>formula overlay</span></div>
+              <table>
+                <thead><tr><th>Check</th><th>Result</th><th>SOP basis</th></tr></thead>
+                <tbody>
+                  <tr><td>CCPP benchmark</td><td>{formatNumber(result.sopHeatRateBtuKwh)} Btu/kWh / {result.sopNetEfficiencyPercent}%</td><td>Table 1 CCPP benchmark</td></tr>
+                  <tr><td>PURPA efficiency</td><td>{result.purpaEfficiencyPercent}%</td><td>(Electric output + 0.5 x thermal output) / energy input LHV; threshold 42.5%</td></tr>
+                  <tr><td>HRSG steam estimate</td><td>{result.hrsgSteamTph} t/h</td><td>msteam = mair x cp x deltaT x 0.985 / delta h</td></tr>
+                  <tr><td>Ambient derate</td><td>{result.ambientDeratePercent}%</td><td>0.5% power drop per 1 F above reference</td></tr>
+                  <tr><td>Availability / reliability</td><td>{result.availabilityPercent}% / {result.reliabilityPercent}%</td><td>(PT - PM - FO - EFH) / PT and (PT - FO - EFH) / PT</td></tr>
+                  <tr><td>Risk score</td><td>{formatMyr(result.riskScoreMyr)}</td><td>Probability of failure x consequence</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="panel no-pad">
+              <div className="panel-head padded"><h2>SOP Cost Stack</h2><span>benchmark split</span></div>
+              <table>
+                <thead><tr><th>Component</th><th>Percent</th><th>Value</th></tr></thead>
+                <tbody>
+                  {result.capexStack.map((item) => <tr key={item.component}><td>{item.component}</td><td>{item.percent}%</td><td>{formatMyr(item.valueMyr)}</td></tr>)}
+                  {result.lccStack.map((item) => <tr key={item.component}><td>{item.component}</td><td>{item.percent}% LCC</td><td>{formatMyr(item.valueMyr)}</td></tr>)}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section className="two-col">

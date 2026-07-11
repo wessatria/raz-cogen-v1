@@ -30,6 +30,17 @@ export type CogenInput = {
   discountRatePercent: number;
   carbonPriceMyrTonne: number;
   tnbInfrastructureRecoveryMyr: number;
+  ambientTemperatureC: number;
+  referenceAmbientTemperatureC: number;
+  exhaustMassFlowKgS: number;
+  exhaustTemperatureC: number;
+  stackTemperatureC: number;
+  steamEnthalpyRiseKjKg: number;
+  plannedMaintenanceHours: number;
+  forcedOutageHours: number;
+  equivalentForcedOutageHours: number;
+  riskProbabilityPercent: number;
+  riskConsequenceMyr: number;
   exportEnabled: boolean;
   exportApproved: boolean;
   incentiveConfirmed: boolean;
@@ -109,6 +120,19 @@ export type CogenResult = {
   npvMyr: number;
   irrPercent: number | null;
   emissionsSavedTco2e: number;
+  sopPlantType: "Combined Cycle Power Plant";
+  sopHeatRateBtuKwh: number;
+  sopNetEfficiencyPercent: number;
+  purpaEfficiencyPercent: number;
+  purpaQualified: boolean;
+  ambientDeratePercent: number;
+  ambientAdjustedGrossPowerMw: number;
+  hrsgSteamTph: number;
+  availabilityPercent: number;
+  reliabilityPercent: number;
+  riskScoreMyr: number;
+  capexStack: Array<{ component: string; percent: number; valueMyr: number }>;
+  lccStack: Array<{ component: string; percent: number; valueMyr: number }>;
   eecaEnergyGJ: number;
   eecaStatus: "Applicable" | "Below threshold";
   issueStatus: "Issue ready" | "Draft blocked";
@@ -146,6 +170,17 @@ export const defaultInput: CogenInput = {
   discountRatePercent: 9,
   carbonPriceMyrTonne: 0,
   tnbInfrastructureRecoveryMyr: 0,
+  ambientTemperatureC: 32,
+  referenceAmbientTemperatureC: 15,
+  exhaustMassFlowKgS: 85,
+  exhaustTemperatureC: 520,
+  stackTemperatureC: 160,
+  steamEnthalpyRiseKjKg: 2200,
+  plannedMaintenanceHours: 240,
+  forcedOutageHours: 48,
+  equivalentForcedOutageHours: 24,
+  riskProbabilityPercent: 10,
+  riskConsequenceMyr: 500000,
   exportEnabled: false,
   exportApproved: false,
   incentiveConfirmed: false,

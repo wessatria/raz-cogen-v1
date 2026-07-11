@@ -1,10 +1,17 @@
-import type { Check, CogenInput, CogenResult, HmbStream, InputEvidence } from "./model";
+﻿import type { Check, CogenInput, CogenResult, HmbStream, InputEvidence } from "./model";
 
 const MMBTU_TO_GJ = 1.055056;
 const MWH_TO_GJ = 3.6;
+const NATURAL_GAS_LHV_TO_HHV = 0.9;
+const SOP_CCPP_HEAT_RATE_BTU_KWH = 6203;
+const SOP_CCPP_NET_EFFICIENCY_PERCENT = 55;
+const PURPA_EFFICIENCY_THRESHOLD_PERCENT = 42.5;
+const HRSG_RADIATION_LOSS_FACTOR = 0.985;
+const EXHAUST_CP_KJ_KG_K = 1.1;
+const ANNUAL_PERIOD_HOURS = 8760;
 const GAS_TCO2_PER_MMBTU = 0.05306;
 const GRID_TCO2_PER_MWH = 0.758;
-const CALCULATION_VERSION = "0.1.0";
+const CALCULATION_VERSION = "0.2.0-sop";
 
 function round(value: number, decimals = 2) {
   const factor = 10 ** decimals;
@@ -27,6 +34,31 @@ function estimateIrr(initialInvestment: number, annualCashFlow: number, years: n
     else high = mid;
   }
   return round(((low + high) / 2) * 100, 1);
+}
+
+function stackValue(total: number, percentValue: number) {
+  return round(total * percentValue / 100, 0);
+}
+
+function capexStack(totalCapexMyr: number) {
+  return [
+    { component: "Gas Turbine", percent: 30, valueMyr: stackValue(totalCapexMyr, 30) },
+    { component: "Steam Turbine", percent: 10, valueMyr: stackValue(totalCapexMyr, 10) },
+    { component: "HRSG", percent: 10, valueMyr: stackValue(totalCapexMyr, 10) },
+    { component: "Mechanical Systems", percent: 15, valueMyr: stackValue(totalCapexMyr, 15) },
+    { component: "Electrical Systems", percent: 12, valueMyr: stackValue(totalCapexMyr, 12) },
+    { component: "Controls", percent: 3, valueMyr: stackValue(totalCapexMyr, 3) },
+    { component: "Civil & Infrastructure", percent: 20, valueMyr: stackValue(totalCapexMyr, 20) },
+  ];
+}
+
+function lccStack(capexMyr: number, annualCogenCostMyr: number, years: number) {
+  const totalLifeCycleMyr = capexMyr + annualCogenCostMyr * years;
+  return [
+    { component: "Fuel Costs", percent: 75, valueMyr: stackValue(totalLifeCycleMyr, 75) },
+    { component: "O&M Costs", percent: 17, valueMyr: stackValue(totalLifeCycleMyr, 17) },
+    { component: "Initial Capital", percent: 8, valueMyr: stackValue(totalLifeCycleMyr, 8) },
+  ];
 }
 
 function usefulHeatMw(steamTph: number, condensateReturnPercent: number) {
@@ -61,7 +93,10 @@ export function calculateCogen(input: CogenInput, evidence: InputEvidence[]): Co
   const electricalEfficiency = usefulHeatMwBase < 7 ? 0.39 : 0.32;
   const auxiliaryLoss = 0.05;
   const fuelInputMw = usefulHeatMwBase / usefulHeatEfficiency;
-  const grossPowerMw = fuelInputMw * electricalEfficiency;
+  const rawGrossPowerMw = fuelInputMw * electricalEfficiency;
+  const ambientRiseF = Math.max(0, (input.ambientTemperatureC - input.referenceAmbientTemperatureC) * 9 / 5);
+  const ambientDeratePercentRaw = Math.min(35, ambientRiseF * 0.5);
+  const grossPowerMw = rawGrossPowerMw * (1 - ambientDeratePercentRaw / 100);
   const unconstrainedNetPowerMw = grossPowerMw * (1 - auxiliaryLoss);
   const netPowerMw = input.exportEnabled && input.exportApproved ? unconstrainedNetPowerMw : Math.min(unconstrainedNetPowerMw, input.baseDemandMw);
   const selectedTechnology: "Gas engine" | "Gas turbine" = usefulHeatMwBase < 7 ? "Gas engine" : "Gas turbine";
@@ -100,6 +135,14 @@ export function calculateCogen(input: CogenInput, evidence: InputEvidence[]): Co
   const irrPercent = estimateIrr(capexMyr, annualSavingMyr, input.projectLifeYears);
   const emissionsSavedTco2e = input.annualElectricityMwh * GRID_TCO2_PER_MWH + input.annualBoilerFuelMmbtu * GAS_TCO2_PER_MMBTU - fuelInputMmbtuYear * GAS_TCO2_PER_MMBTU - residualGridMwh * GRID_TCO2_PER_MWH - supplementalBoilerMmbtu * GAS_TCO2_PER_MMBTU;
   const eecaEnergyGJ = input.annualElectricityMwh * MWH_TO_GJ + input.annualBoilerFuelMmbtu * MMBTU_TO_GJ;
+  const fuelInputLhvGJYear = fuelInputMmbtuYear * MMBTU_TO_GJ * NATURAL_GAS_LHV_TO_HHV;
+  const purpaEfficiencyRaw = fuelInputLhvGJYear > 0 ? ((annualGenerationMwh * MWH_TO_GJ + 0.5 * usefulHeatGJYear) / fuelInputLhvGJYear) * 100 : 0;
+  const purpaQualified = purpaEfficiencyRaw >= PURPA_EFFICIENCY_THRESHOLD_PERCENT;
+  const hrsgSteamKgS = input.steamEnthalpyRiseKjKg > 0 ? input.exhaustMassFlowKgS * EXHAUST_CP_KJ_KG_K * Math.max(0, input.exhaustTemperatureC - input.stackTemperatureC) * HRSG_RADIATION_LOSS_FACTOR / input.steamEnthalpyRiseKjKg : 0;
+  const hrsgSteamTph = hrsgSteamKgS * 3.6;
+  const availabilityRaw = Math.max(0, Math.min(100, (ANNUAL_PERIOD_HOURS - input.plannedMaintenanceHours - input.forcedOutageHours - input.equivalentForcedOutageHours) / ANNUAL_PERIOD_HOURS * 100));
+  const reliabilityRaw = Math.max(0, Math.min(100, (ANNUAL_PERIOD_HOURS - input.forcedOutageHours - input.equivalentForcedOutageHours) / ANNUAL_PERIOD_HOURS * 100));
+  const riskScoreMyr = (input.riskProbabilityPercent / 100) * input.riskConsequenceMyr;
   const eecaStatus: "Applicable" | "Below threshold" = eecaEnergyGJ >= 21600 ? "Applicable" : "Below threshold";
 
   const materialEvidence = evidence.filter((item) => item.status !== "not applicable");
@@ -112,6 +155,10 @@ export function calculateCogen(input: CogenInput, evidence: InputEvidence[]): Co
   if (input.exportEnabled && !input.exportApproved) checks.push({ gate: "regulatory", status: "block", message: "Export revenue is disabled until regulatory and interconnection approval is recorded." });
   if (input.incentiveMyr > 0 && !input.incentiveConfirmed) checks.push({ gate: "commercial", status: "block", message: "Incentive value cannot be included without project-specific evidence." });
   if (annualSavingMyr < 0) checks.push({ gate: "commercial", status: "warning", message: "The base case has negative savings; the proposal must show this plainly." });
+  if (!purpaQualified) checks.push({ gate: "regulatory", status: "block", message: `SOP/PURPA efficiency is ${round(purpaEfficiencyRaw, 1)}%, below the 42.5% qualification threshold.` });
+  if (ambientDeratePercentRaw > 0) checks.push({ gate: "engineering", status: "warning", message: `Ambient derate applied: ${round(ambientDeratePercentRaw, 1)}% power output reduction versus ${input.referenceAmbientTemperatureC} C reference.` });
+  if (hrsgSteamTph < input.minimumSteamTph) checks.push({ gate: "engineering", status: "warning", message: `SOP HRSG estimate provides ${round(hrsgSteamTph, 1)} t/h steam versus ${input.minimumSteamTph} t/h minimum demand; confirm OEM exhaust data or supplementary firing.` });
+  if (availabilityRaw < 92) checks.push({ gate: "engineering", status: "warning", message: `Availability is ${round(availabilityRaw, 1)}%; review planned maintenance and forced outage allowance.` });
   if (completeness < 80) checks.push({ gate: "data", status: "warning", message: "Less than 80% of material inputs have direct evidence or derived trace." });
   if (!input.technicalApproved) checks.push({ gate: "review", status: "block", message: "Technical reviewer approval is required before issue." });
   if (!input.commercialApproved) checks.push({ gate: "review", status: "block", message: "Commercial reviewer approval is required before issue." });
@@ -137,6 +184,19 @@ export function calculateCogen(input: CogenInput, evidence: InputEvidence[]): Co
     npvMyr: round(npvMyr, 0),
     irrPercent,
     emissionsSavedTco2e: round(emissionsSavedTco2e, 0),
+    sopPlantType: "Combined Cycle Power Plant" as const,
+    sopHeatRateBtuKwh: SOP_CCPP_HEAT_RATE_BTU_KWH,
+    sopNetEfficiencyPercent: SOP_CCPP_NET_EFFICIENCY_PERCENT,
+    purpaEfficiencyPercent: round(purpaEfficiencyRaw, 1),
+    purpaQualified,
+    ambientDeratePercent: round(ambientDeratePercentRaw, 1),
+    ambientAdjustedGrossPowerMw: round(grossPowerMw, 2),
+    hrsgSteamTph: round(hrsgSteamTph, 1),
+    availabilityPercent: round(availabilityRaw, 1),
+    reliabilityPercent: round(reliabilityRaw, 1),
+    riskScoreMyr: round(riskScoreMyr, 0),
+    capexStack: capexStack(capexMyr),
+    lccStack: lccStack(capexMyr, cogenCostMyr, input.projectLifeYears),
     eecaEnergyGJ: round(eecaEnergyGJ, 0),
     eecaStatus,
     issueStatus: (checks.some((check) => check.status === "block") ? "Draft blocked" : "Issue ready") as "Draft blocked" | "Issue ready",
