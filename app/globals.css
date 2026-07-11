@@ -85,3 +85,7 @@ td small { display: block; margin-top: 3px; color: var(--muted); line-height: 1.
 .docx-button { min-height: 38px; border: 1px solid #235f52; border-radius: 6px; background: #235f52; color: #fff; font-weight: 700; padding: 0 13px; cursor: pointer; white-space: nowrap; }
 .docx-button:hover { background: #1b4b41; }
 .docx-button:disabled { cursor: wait; opacity: 0.65; }
+.calculate-button { width: 100%; min-height: 42px; border: 1px solid #1d4ed8; border-radius: 6px; background: #1d4ed8; color: #fff; font-weight: 800; cursor: pointer; margin-bottom: 10px; }
+.calculate-button:hover { background: #1e40af; }
+.pending-note { margin: 0 0 12px; border: 1px solid #bfdbfe; border-radius: 6px; background: #eff6ff; color: #1e3a8a; padding: 9px 10px; font-size: 13px; line-height: 1.4; }
+.status-chip.pending { border-color: #bfdbfe; color: #1d4ed8; background: #eff6ff; }

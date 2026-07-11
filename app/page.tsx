@@ -56,18 +56,27 @@ function formatNumber(value: number, digits = 0) {
 
 export default function Home() {
   const [input, setInput] = useState<CogenInput>(defaultInput);
+  const [calculationInput, setCalculationInput] = useState<CogenInput>(defaultInput);
   const [evidence] = useState<InputEvidence[]>(defaultEvidence);
   const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
-  const result = useMemo(() => calculateCogen(input, evidence), [input, evidence]);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const result = useMemo(() => calculateCogen(calculationInput, evidence), [calculationInput, evidence]);
   const blocking = result.checks.filter((check) => check.status === "block");
   const warnings = result.checks.filter((check) => check.status === "warning");
 
   const updateNumber = (key: NumberField, value: string) => {
+    setHasPendingChanges(true);
     setInput((current) => ({ ...current, [key]: value === "" ? 0 : Number(value) }));
   };
 
   const updateFlag = (key: keyof Pick<CogenInput, "exportEnabled" | "exportApproved" | "incentiveConfirmed" | "technicalApproved" | "commercialApproved">) => {
+    setHasPendingChanges(true);
     setInput((current) => ({ ...current, [key]: !current[key] }));
+  };
+
+  const runCalculation = () => {
+    setCalculationInput(input);
+    setHasPendingChanges(false);
   };
 
   const generateWordProposal = async () => {
@@ -76,7 +85,7 @@ export default function Home() {
       const response = await fetch("/api/proposals/docx", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input, evidence }),
+        body: JSON.stringify({ input: calculationInput, evidence }),
       });
 
       if (!response.ok) {
@@ -98,7 +107,7 @@ export default function Home() {
       setIsGeneratingDocx(false);
     }
   };
-  const proposalText = `Budget-Level Cogeneration Proposal\nPrepared for: ${input.clientName}\nSite: ${input.siteName}, ${input.state}\nCalculation version: ${CALCULATION_VERSION}\nStatus: ${result.issueStatus === "Issue ready" ? "READY TO ISSUE" : "DRAFT"}\n\nExecutive indication\nRaz Engineering has identified a preliminary ${result.netPowerMw} MW net ${result.selectedTechnology.toLowerCase()} cogeneration configuration sized primarily against the site's minimum coincident useful-heat demand and electrical base load. The screening case indicates ${formatNumber(result.annualGenerationMwh)} MWh/year, ${formatNumber(result.usefulHeatGJYear)} GJ/year useful heat, ${formatNumber(result.fuelInputMmbtuYear)} MMBtu/year fuel input, indicative installed CAPEX of ${formatMyr(result.capexMyr)}, annual saving of ${formatMyr(result.annualSavingMyr)}, and simple payback of ${result.simplePaybackYears ?? "not achieved"} years.\n\nEECA screen: ${result.eecaStatus} at ${formatNumber(result.eecaEnergyGJ)} GJ over 12 months. EECA applicability is shown separately from cogeneration project approvals. Export revenue is ${input.exportEnabled && input.exportApproved ? "included with approval" : "not assumed"}. Incentives are ${input.incentiveConfirmed ? "included with evidence" : "zero unless confirmed"}.\n\nDisclaimer\nThis assessment is a budget-level screening based on information supplied by the customer and stated assumptions. It is not an OEM guarantee, statutory energy audit, regulatory approval, tax opinion, construction design or binding offer.`;
+  const proposalText = `Budget-Level Cogeneration Proposal\nPrepared for: ${calculationInput.clientName}\nSite: ${calculationInput.siteName}, ${calculationInput.state}\nCalculation version: ${CALCULATION_VERSION}\nStatus: ${result.issueStatus === "Issue ready" ? "READY TO ISSUE" : "DRAFT"}\n\nExecutive indication\nRaz Engineering has identified a preliminary ${result.netPowerMw} MW net ${result.selectedTechnology.toLowerCase()} cogeneration configuration sized primarily against the site's minimum coincident useful-heat demand and electrical base load. The screening case indicates ${formatNumber(result.annualGenerationMwh)} MWh/year, ${formatNumber(result.usefulHeatGJYear)} GJ/year useful heat, ${formatNumber(result.fuelInputMmbtuYear)} MMBtu/year fuel input, indicative installed CAPEX of ${formatMyr(result.capexMyr)}, annual saving of ${formatMyr(result.annualSavingMyr)}, and simple payback of ${result.simplePaybackYears ?? "not achieved"} years.\n\nEECA screen: ${result.eecaStatus} at ${formatNumber(result.eecaEnergyGJ)} GJ over 12 months. EECA applicability is shown separately from cogeneration project approvals. Export revenue is ${calculationInput.exportEnabled && calculationInput.exportApproved ? "included with approval" : "not assumed"}. Incentives are ${calculationInput.incentiveConfirmed ? "included with evidence" : "zero unless confirmed"}.\n\nDisclaimer\nThis assessment is a budget-level screening based on information supplied by the customer and stated assumptions. It is not an OEM guarantee, statutory energy audit, regulatory approval, tax opinion, construction design or binding offer.`;
 
   return (
     <main className="min-h-screen bg-[#f6f7f9] text-[#18202a]">
@@ -113,6 +122,7 @@ export default function Home() {
             <span className="status-chip">Calc {CALCULATION_VERSION}</span>
             <span className={result.issueStatus === "Issue ready" ? "status-chip ready" : "status-chip blocked"}>{result.issueStatus}</span>
             <span className="status-chip">Evidence {result.completeness}%</span>
+            {hasPendingChanges && <span className="status-chip pending">Inputs changed</span>}
           </div>
         </div>
       </section>
@@ -124,11 +134,11 @@ export default function Home() {
               <h2>Case</h2>
               <span>Stage 0-1</span>
             </div>
-            <label className="field wide"><span>Client</span><input value={input.clientName} onChange={(event) => setInput({ ...input, clientName: event.target.value })} /></label>
-            <label className="field wide"><span>Site</span><input value={input.siteName} onChange={(event) => setInput({ ...input, siteName: event.target.value })} /></label>
+            <label className="field wide"><span>Client</span><input value={input.clientName} onChange={(event) => { setHasPendingChanges(true); setInput({ ...input, clientName: event.target.value }); }} /></label>
+            <label className="field wide"><span>Site</span><input value={input.siteName} onChange={(event) => { setHasPendingChanges(true); setInput({ ...input, siteName: event.target.value }); }} /></label>
             <div className="grid grid-cols-2 gap-3">
-              <label className="field"><span>Industry</span><input value={input.industry} onChange={(event) => setInput({ ...input, industry: event.target.value })} /></label>
-              <label className="field"><span>State</span><input value={input.state} onChange={(event) => setInput({ ...input, state: event.target.value })} /></label>
+              <label className="field"><span>Industry</span><input value={input.industry} onChange={(event) => { setHasPendingChanges(true); setInput({ ...input, industry: event.target.value }); }} /></label>
+              <label className="field"><span>State</span><input value={input.state} onChange={(event) => { setHasPendingChanges(true); setInput({ ...input, state: event.target.value }); }} /></label>
             </div>
           </div>
 
@@ -151,6 +161,8 @@ export default function Home() {
 
           <div className="panel">
             <div className="panel-head"><h2>Issue Controls</h2><span>gates</span></div>
+            <button className="calculate-button" type="button" onClick={runCalculation}>Calculate</button>
+            {hasPendingChanges && <p className="pending-note">Inputs have changed. Click Calculate to refresh sizing, economics, gates, and proposal outputs.</p>}
             <label className="toggle"><input type="checkbox" checked={input.exportEnabled} onChange={() => updateFlag("exportEnabled")} /><span>Enable export scenario</span></label>
             <label className="toggle"><input type="checkbox" checked={input.exportApproved} onChange={() => updateFlag("exportApproved")} /><span>Export route approved</span></label>
             <label className="toggle"><input type="checkbox" checked={input.incentiveConfirmed} onChange={() => updateFlag("incentiveConfirmed")} /><span>Incentive evidence attached</span></label>
@@ -171,7 +183,7 @@ export default function Home() {
               ["Net capacity", `${result.netPowerMw} MW`, `${result.unitCount} x ${result.selectedTechnology}`],
               ["Useful heat", `${formatNumber(result.usefulHeatGJYear)} GJ/y`, `${result.usefulHeatMwBase} MWth base`],
               ["Annual saving", formatMyr(result.annualSavingMyr), `${result.simplePaybackYears ?? "No"} year payback`],
-              ["NPV / IRR", `${formatMyr(result.npvMyr)} / ${result.irrPercent ?? "n/a"}%`, `${input.projectLifeYears} year model`],
+              ["NPV / IRR", `${formatMyr(result.npvMyr)} / ${result.irrPercent ?? "n/a"}%`, `${calculationInput.projectLifeYears} year model`],
               ["LCOE", `RM ${result.lcoeMyrKwh}/kWh`, `Heat credit RM ${result.heatCreditNetPowerMyrKwh}/kWh`],
               ["EECA", result.eecaStatus, `${formatNumber(result.eecaEnergyGJ)} GJ/12 months`],
             ].map(([label, value, note]) => (
